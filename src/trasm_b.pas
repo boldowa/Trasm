@@ -1,6 +1,7 @@
 {
+Outputs bin file only version
 To compile this program with Free Pascal, type this command in command prompt. (Set PATH variable first!)
-fpc -Mtp trasm.pas
+fpc -Mtp trasm_b.pas
 }
 
 program _65816_Tricks_Assembler;
@@ -105,10 +106,10 @@ type symboltype=record
      end;
      mltype=array [0..255] of byte;
 
-var asmfile,symfile,lstfile,errfile: text;
-    asmfname,symfname,lstfname,errfname: string;
-    binfile,smcfile: file;
-    binfname,smcfname: string;
+var asmfile,symfile,lstfile: text;
+    asmfname,symfname,lstfname: string;
+    binfile: file;
+    binfname: string;
 
     cartridge_title: string;
     cartridge_country: byte;
@@ -118,7 +119,6 @@ var asmfile,symfile,lstfile,errfile: text;
     src_line: array [0..7] of longint;
     base_mode: byte;
     base_address, base_start: array [0..7] of longint;
-    use_irq: byte;
     irq_mode: byte;
     irq_nmi,
     irq_res,
@@ -147,13 +147,11 @@ var asmfile,symfile,lstfile,errfile: text;
     flag_display,
     flag_forwardref,
     flag_listing,
-    flag_symbol,
-    flag_pad: byte;
+    flag_symbol: byte;
 
 procedure save_error (s: string);
 begin
   writeln (s);
-  writeln (errfile,s);
 end;
 
 function inttostr (n: longint): string;
@@ -2224,7 +2222,6 @@ begin
   if (f2='BAS') or (f2='BASE') then e:=base_change (f1,f2,f3,f4) else
   if (f2='INT') or (f2='INTERRUPTS') then
   begin
-    use_irq:=1;
     irq_mode:=1
   end else
   if (f2='ORG') then e:=org_change (ml,nob,f1,f2,f3,f4) else
@@ -2596,22 +2593,11 @@ begin
   header[8]:=$aa;
   header[9]:=$bb;
   header[10]:=$04;
-  assign (smcfile, smcfname);
-  rewrite (smcfile,1);
-  blockwrite (smcfile, header, 512);
   repeat
     blockread (binfile, buf, sizeof (buf), w);
-    blockwrite (smcfile, buf, w);
   until (w<>sizeof (buf));
 
   fillchar (buf, sizeof (buf),0);
-
-  if (filesize (binfile)<32768) then
-    blockwrite (smcfile, buf, 32768-filesize (binfile));
-
-  { pad file to next 32K }
-  if ((filesize (smcfile)-512) mod 32768>0) and (flag_pad=1) then
-    blockwrite (smcfile, buf, 32768-(filesize (smcfile)-512) mod 32768);
 
   fillchar (header, sizeof (header),0);
   header [$3c]:=lo (word(address_start));
@@ -2650,21 +2636,7 @@ begin
   header [$3e]:=lo (irq_brk); { break }
   header [$3f]:=hi (irq_brk);
 
-  seek (smcfile, $8000+$0200-$40);
-  if (use_irq=0) then blockwrite (smcfile, header, 36) else
-    blockwrite (smcfile, header, 64);
-
-  seek (smcfile, $7ffc+$0200);
-  blockread (smcfile, w, 2);
-  if (w=0) and (use_irq=0) then
-  begin
-    w:=address_start and $ffff;
-    seek (smcfile, $7ffc+$0200);
-    blockwrite (smcfile, w, 2);
-  end;
-
   close (binfile);
-  close (smcfile);
 end;
 
 procedure save_symbol_list;
@@ -2695,11 +2667,8 @@ begin
   symfname:=s+'.sym';
   lstfname:=s+'.lst';
   assign (lstfile, lstfname);
-  errfname:=s+'.err';
-  assign (errfile, errfname);
   binfname:=s+'.bin';
   assign (binfile, binfname);
-  smcfname:=s+'.smc';
   cartridge_title:='(C) 1994 TricksASM';
   cartridge_country:=1;
   cartridge_version:=1;
@@ -2707,7 +2676,6 @@ begin
   src_mode:=0;
   base_mode:=0;
   irq_mode:=0;
-  use_irq:=0;
   irq_nmi:=0;
   irq_res:=0;
   irq_brk:=0;
@@ -2720,7 +2688,6 @@ begin
   flag_forwardref:=1;
   flag_listing:=0;
   flag_symbol:=0;
-  flag_pad:=0;
   for i:=1 to paramcount do
   begin
     if (paramstr(i)='-z') then flag_debug:=1;
@@ -2728,7 +2695,6 @@ begin
     if (paramstr(i)='-d') then flag_display:=1;
     if (paramstr(i)='-f') then flag_forwardref:=0;
     if (paramstr(i)='-l') then flag_listing:=1;
-    if (paramstr(i)='-p') then flag_pad:=1;
   end;
   if (get_symbolmemory (max_symbols)>0) then exit;
   init:=0;
@@ -2739,16 +2705,18 @@ begin
   writeln;
   writeln ('65816 Tricks Assembler Version 1.11   (C)opyright 1994 1000 Miles [Tricks]');
   writeln ('Internet: norman_yen@idream.tfbbs.wimsey.com, IRC: minus');
+  writeln ('Bin file only version 2007/02/01 by nanashi');
   writeln;
+
   if (paramcount=0) then
   begin
-    writeln ('     USAGE: TRASM [options] source');
+    writeln ('     USAGE: TRASM_B [options] source');
     writeln;
     writeln ('     Options: -$ ... Generate symbol table   (default off)');
     writeln ('              -d ... Display assembly        (default off)');
     writeln ('              -f ... Show forward reference  (default on)');
     writeln ('              -l ... Generate source listing (default off)');
-    writeln ('              -p ... Pad SMC file to 32K     (default off)');
+    writeln ('              -p ... Ignored                 (default off)');
     writeln ('              -s ... Ignored                 (default off)');
     writeln ('              -z ... Internal debugging      (default off)');
     writeln;
@@ -2776,10 +2744,6 @@ begin
       halt(1);
     end;
 
-    rewrite (errfile);
-    writeln (errfile,'Error listing for ',toupper (asmfname));
-    writeln (errfile);
-
     case find_startaddress of
       0: save_error ('Starting address defined as $'+dectohex (address_start,6));
       1: save_error ('No start address defined, defaulting to $'+dectohex (address_start,6));
@@ -2804,7 +2768,6 @@ begin
         save_error ('Fatal error, unable to continue assembling.');
         close (asmfile);
         close (binfile);
-        close (errfile);
         halt (1);
       end;
       if (pass=3) then
@@ -2837,8 +2800,6 @@ begin
     save_error ('Statements='+inttostr(statement_total));
     save_error ('Symbols='+inttostr(symbol_count));
     save_error ('Errors='+inttostr(error_count));
-    writeln (errfile);
-    close (errfile);
     free_symbolmemory (max_symbols);
   end;
 end.
