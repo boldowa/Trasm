@@ -2723,7 +2723,7 @@ begin
   end else
   begin
     i:=1;
-    while (copy (paramstr(i),1,1)='-') or (copy (paramstr (i),1,1)='/') do inc (i);
+    while (copy (paramstr(i),1,1)='-') do inc (i);
     asmfname:=paramstr (i);
     if (pos ('.',asmfname)=0) then asmfname:=asmfname+'.asm';
 
