@@ -1,0 +1,562 @@
+
+<SNES><SNES><SNES><SNES><SNES><SNES><SNES><SNES><SNES><SNES><SNES><SNES>
+                   _______       _         _
+                  [___ ___]____ [_]  ____ | | __  ____
+                  ~~~| |~~|  __]| | / ___]| |/ / / ___]
+                     | |  | |~  | || |___ | |\ \ \___ \
+                     |_|  |_|   |_| \____]|_|~\_][____/
+                     ~~   ~~    ~~  ~~~~~ ~~  ~~ ~~~~~
+<SNES><SNES><SNES><SNES><SNES><SNES><SNES><SNES><SNES><SNES><SNES><SNES>
+
+
+65816 Tricks Assembler Version 1.11 (Bug fix for 1.10)
+(C)opyright 1994  1000 Miles [Tricks]
+Internet: norman_yen@idream.tfbbs.wimsey.com
+IRC: minus
+
+Updated on 02-14-94
+
+*** NOTE:
+    All additions and changes to the instructions have a '>'
+    symbol preceding each line.
+
+*** WARNING:
+    This is PUBLIC DOMAIN.  The author does not provided any
+    guarantees or warranties in the use of this program.  The author
+    is not liable for any damage caused by this program or any other
+    programs enclosed with this archive.  USE AT YOUR OWN RISK!
+
+
+        Introduction
+        ============
+
+        The Tricks Assembler is a cross-assembler for compiling
+        65c816 assembly into binary for use on the Super Nintendo
+        Entertainment System (Super Famicon) on a PC computer.
+        Whether someone can produce something on a professional
+        level with this utility is a mystery to me (if you do, let
+        me know!).
+
+        This assembler is based on a previous assembler which I
+        wrote called SNES Assembler.  What I've done is taken the
+        same ideas and rewritten the entire assembler and removed
+        several bugs that existed in the old code.  This newer
+        assembler has a few more abilities over the old one.  As
+        well it has capabilities that are similiar to those found
+        on other platforms like the Atari ST and Amiga.  Converting
+        source codes from other assemblers should be fairly simple.
+        I've been successful in converting both SNES Wish '92 and
+        the HDMA Demo to work with TricksASM with little
+        modification.
+
+        Here's a few of the technical aspects about the assembler.
+
+        Tricks Assembler is written in Turbo Pascal 6.0.
+        Requires atleast 400KB of conventional memory to run, memory
+           hog.
+        Maximum symbol names is 8192, each symbol can be 18
+           characters and is stored in uppercase.  Do not use 'A' as
+           a symbol name.
+        Order of operations:  *, /, mod, & (and), << (shl), >> (shr),
+           +, -, | (or), xor.
+        Practically no eror checking is performed on operands so if
+           you use the wrong characters you might get an unexpected
+           value.
+        The WDM and COP instructions are not implemented in the
+           assembler.
+        3 Pass assembling.
+
+
+        Assembling Options
+        ==================
+
+        There are a few options available when assembling your source
+        code.
+
+                -$ ... Generate symbol table   (default off)
+                       Will write a text file containing all of the
+                       symbols used with both their hex and decimal
+                       values.
+
+                -d ... Display assembly        (default off)
+                       You can display the lines as they are being
+                       assembled.  Having this off speeds things up.
+
+                -f ... Show forward reference  (default on)
+                       Whether or not you want to show the forward
+                       reference error during pass 1 of assembly.
+
+                -l ... Generate source listing (default off)
+                       This will generate a complete source listing
+                       of your file.  Just about everything is
+                       converted into uppercase, the exception is
+                       anything enclosed in quotation marks.
+
+                -p ... Pad SMC file to 32K     (default off)
+                       Most utilities that handle SMC files require
+                       that your file be a multiple of 32768 bytes.
+                       If your file does not turn out that way you
+                       may encounter problems using some parallel
+                       port sending utilities.
+
+                -s ... Send file to I/O port   (default off)
+                       When TricksASM is done assembling and no
+                       errors occured in the final pass the SMC file
+                       will automatically be sent over to the console
+                       backup unit through the parallel port.  If you
+                       make use of any reset code in your file it will
+                       not work with this method of parallel port
+                       sending.  I'm working on a solution to this.
+
+>               -z ... Internal debugging      (default off)
+>                      This is basically for debugging the assembler.
+>                      If you find that the assembler freezes on you
+>                      you can try assembling your source with this
+>                      option on and you will get an output of what
+>                      is happening during the assembling process.
+>                      It'll help locate where the assembler is
+>                      locking up at.
+
+
+        Files
+        =====
+
+        *.BIN           The raw binary file without the vector tables
+                        and 512 byte header.
+
+        *.ERR           The error list during the assembling process.
+
+        *.LST           Source listing as the assembler would see it.
+                        (optional, see Assembling Options -l)
+
+        *.SYM           Listing of all the symbols used in the source
+                        code.
+                        (optional, see Assembling Options -$)
+
+        *.SMC           The executable file you can load up on your
+                        console backup unit.  This has the 512 byte
+                        header.
+
+        When the SMC file is created the file can be no smaller than
+        33280 bytes.  The reason for this is that almost all decent
+        parallel port sending utilities extract information from the
+        cartridge information area located in the last page of the
+        first bank.  A utility cannot move to that area if it does
+        not exist.  As well, the vector tables are also located in
+        the last 28 bytes of the first bank.
+
+
+        Arithmetic Operators
+        ====================
+
+        You are free to use most of the basic operators like addition
+        (+), subtraction (-), division (/) (integer), and multi-
+        plication (*).  On top of those you have your logical
+        operators like and (&), or (|), xor, and mod.  You also have
+        your bit-wise operators like shift left (<<) and shift-right
+        (>>).
+
+        Since the assembler is really picky about order of operations
+        it is best to use parenthesis around the logical and bit-wise
+        operators.  For example, say you want to get the high byte of
+        the word value $8011.
+
+                LDX #($8011>>8)&$ff
+
+        If you tried it without the parenthesis you would of gotten
+        some wild value.
+
+        You should also be careful about extra characters in your
+        operands.  A small typo can have drastic effects as the
+        assembler has very little error checking for unexpected
+        characters in the operand field.  You could get some weird
+        values if this happens.  (That's why it is a good idea to
+        generate a source listing so you can see where the assembler
+        is going wrong.)
+
+
+        Operand Lengths, 8-, 16-, or 24-bit?
+        ====================================
+
+        The assembler has no way of telling whether you want an
+        8-bit, 16-bit, or 24-bit operand unless you specifically
+        force an operand length with the .B, .W, or .L suffixes on
+        the instructions.
+
+                .B for byte
+                .W for word
+                .L for long (24-bits)
+
+        If you do not add these in, TricksASM will always try and
+        produce the smallest length possible.  For example if the
+        operand was $45 the operand length would be 8-bits.  If you
+        added .W to the end of your instruction the operand would
+        become $0045.  Here's an example.
+
+                LDA #$45
+
+        Would turn out as A9 45 in the source listing.
+
+                LDA.W #$45
+
+        Would turn out as A9 45 00 in the source listing.
+
+        Basically there is no way of telling whether you are in
+        native or emulation mode or if the accumulator/index is
+        8-bit or 16-bit.
+
+
+        Pseudo-Ops
+        ==========
+
+        <xxx> = <yyy> . The equate symbol defines what a symbol is
+                or      equal.  Basically it assigns the value in
+        <xxx> EQU <yyy> <yyy> to the variable/symbol <xxx>.  The
+                        variable or symbol name can have a maximum
+                        of 18 characters.
+
+                Example
+                        TempByte =      $80     ; 128
+
+
+>       BAS <xxxx> .... Change the current assembly address to
+>               or      the value specified for code that is to be
+>       BASE <xxxx> ... relocated to address <xxxx>.  TricksASM
+>                       will pretend any code between the BASE and
+>                       END pseudo-op is suppose to reside at a
+>                       different address.  You might find this
+>                       useful if you intend to copy routines into
+>                       the work RAM or lower RAM.  If you fail to
+>                       mark the ending of the routine with an END
+>                       statement your code will all be assembled
+>                       with the wrong addresses.
+>
+>               Example #1
+>                               ORG     $8000
+>                                               ; do your stuff
+>                       Main    jsr     VBlank
+>                               jmp     Init
+>                                               ; do your stuff
+>                                               ; base change
+>                               BASE    $1800
+>                       Vblank
+>                       -       lda     $4210
+>                               and     #$80
+>                               beq     -
+>                               rts
+>                               END
+>                                               ; do your stuff
+>                       Init
+>
+>                       The assembly listing would look like this.
+>
+>                       008000                      ORG    $8000
+>                       008000
+>                       008000 20 00 18    MAIN     JSR    VBLANK
+>                       008003 4C 0E 80             JMP    INIT
+>                       008006
+>                       008006
+>                       001800                      BASE   $1800
+>                       001800             VBLANK
+>                       001800 AD 10 42    -        LDA    $4210
+>                       001803 29 80                AND    #$80
+>                       001805 F0 F9                BEQ    -
+>                       001807 60                   RTS
+>                       00800E                      END
+>                       00800E
+>                       00800E             INIT
+>
+>                       For the more imaginative programmers you
+>                       could use this instruction for declaring
+>                       records.  Just set the base to zero and
+>                       create a bunch of variables using DSB, DSW
+>                       or DSD.  Assign a symbol as the base address
+>                       for the variables and when you want to
+>                       access something in the record just add the
+>                       proper symbol.
+>
+>               Example #2
+>                               BASE    $0000
+>                       PName   DSB     32      ; 32 bytes
+>                       Age     DSB     1       ; 1 byte
+>                       Phone   DSB     12      ; 12 bytes
+>                       Sex     DSB     1       ; 1 byte
+>                               END
+>
+>                       List    =       $1000
+>                               ....
+>                               lda     List+Age
+>                               ldy     List+Sex
+>
+>                       You can stack a maximum of 8 bases addresses.
+
+
+        BIN <file> .... Append a binary file to the current address.
+                or      To be on the safe side you should try and
+        INCBIN <file> . keep the file you want to append down to 32K
+                        in size.  Appending files larger than that
+                        might have weird side effects with the
+                        current address pointer.  You can enclose
+                        your file name in quotations if you like.
+
+                Example #1
+                                bin     sintable.dat
+                        or
+                                incbin  sintable.dat
+
+                Example #2
+                                bin     "font1.dat"
+
+
+        COU <xx> ...... Sets the country code located in the header.
+                or      The corresponding country for each value was
+        COUNTRY <xx> .. derrived from the Magicom File Uploader (AKA
+                        Send v2.3) utility written by R. Bubba
+                        Magillicutty.
+
+                        Hex    $00 = Japan
+                                01 = USA(/Canada)
+                                02 = Europe, Oceania, Asia
+                                03 = Sweden
+                                04 = Finlan
+                                05 = Denmark
+                                06 = France
+                                07 = Holland
+                                08 = Spain
+                                09 = Germany, Austria, Switzerland
+                                0a = Italy
+                                0b = Hong Kong, China
+                                0c = Indonesia
+                                0d = Korea
+
+                Example
+                                cou     $01 ; USA
+                        or
+                                country 1   ; USA
+
+
+        DC.B <xx> ..... Defines a series of byte values for that
+                or      address.  You can put a single byte or
+        DCB <xx> ...... multiple bytes by separating each value with
+                or      a comma.  You can also enclose text within
+        DB <xx> ....... brackets and ASCII values will be used.
+
+                Example
+                        Text    DC.B    'Hello there Mister',0
+
+
+        DC.D <xx> ..... Defines a series of double word values for
+                or      that address.  You can put a single dword or
+        DCD <xx> ...... muliple dwords by separating each value with
+                or      a comma.  A dword is 4 bytes long or 2 words.
+        DD <xx> ....... you can use text as well but if you do TRASM
+                        will only take each character an extend it's
+                        value out to 4 bytes.
+
+
+        DC.W <xx> ..... Defines a series of word values for that
+                or      address.  You can put a single word or
+        DCW <xx> ...... multiple words by separating each value with
+                or      a comma.  You can also enclose text within
+        DW <xx> ....... brackets and ASCII values will be used but
+                        the high byte will be set to $00.  In
+                        otherwords, if you use text the value won't
+                        be from two characters, but from a single
+                        character extended out to word length.
+
+
+>       DS.B <xx> ..... Declares a string of bytes for use as
+>               or      variable space.  The bytes are initialized
+>       DSB <xx>        with zeros.  Since variables can only exist
+>                       in RAM this might serve little purpose other
+>                       than for data which is to be relocated.
+
+
+>       DS.D <xx> ..... Declares a string of double words for use as
+>               or      variable space.  The dwords are initialized
+>       DSD <xx>        with zeros.  Since variables can only exist
+>                       in RAM this might serve little purpose other
+>                       than for data which is to be relocated.
+
+
+>       DS.W <xx> ..... Declares a string of words for use as
+>               or      variable space.  The words are initialized
+>       DSW <xx>        with zeros.  Since variables can only exist
+>                       in RAM this might serve little purpose other
+>                       than for data which is to be relocated.
+
+
+        INT ........... Defines the interrupt vector table located at
+                or      the last 28 bytes of the first bank.  Each
+        INTERRUPT ..... vector is word length, in low/high byte
+                        format.  There are 6 interrupts you can set.
+
+                        ABO (ABORT) - Abort vector
+                        BRK (BREAK) - Break vector
+                        COP         - Co-processor vector
+                        IRQ         - Interrupt request vector
+                        NMI         - Non-maskable interrupt vector
+                        RES (RESET) - Reset vector
+
+                        You can set them all to a single value by
+                        using the word ALL.  To mark the ending of
+                        your vector definition table you must use
+                        the word END.  All vectors are initialized
+                        with the value of $0000.  If you do not use
+                        INT in your source code no interrupts will
+                        be written in the vector table in your SMC
+                        file.
+
+                        You might want to note that on the 65816 you
+                        can assign interrupt vectors for both
+                        emulation and native mode.  I've mapped both
+                        native and emulation mode vectors to the same
+                        value.  One exception is that the BRK and IRQ
+                        vector share the same value in emulation
+                        mode.
+
+                Example
+                                org     32768
+
+                        Start   lda     #$7f
+                                sta     $2115
+
+                                int
+                        all     =       $0000
+                        res     =       Start
+                        nmi     =       Scroller
+                                end
+                        Scroller
+                                ....
+
+
+        NAM <title> ... Defines the cartridge title that is store in
+                or      the header.  A maximum of 20 characters can be
+        NAME <title> .. be used, anything more will be truncated.  As
+                or      you can see you have your choice of what
+        TIT <title> ... pseudo-op to use.  You can enclose your title
+                or      in quotations if you want to use spaces or
+        TITLE <title> . lower/uppercase.
+
+                Example
+                                nam     "Galaxy Rangers"
+                        or
+                                title   'Galaxy Rangers'
+
+
+        ORG <xxxx> .... Sets the starting address of the following
+                        code.  This is the first thing TRASM looks
+                        for and it doesn't find it the starting
+                        address will default to $008000 (32768).
+                        Besides using this to establish the starting
+                        address you can also force the assembler to
+                        pad the file all the way up to the specified
+                        address in the operand.  This is handy for
+                        music data that is ripped from a game and
+                        cannot be relocated to another address.
+
+                Example #1
+                                org     $8000   ; start address=32768
+                        Start   jmp     Start   ; Start=32768
+
+                Example #2
+                                org     $8000   ; start address
+                                ....            ; program continues
+                                org     $58000  ; pad file up to
+                                                ; $58000
+                        music   bin     music1
+
+
+        PAD [<xxxx>] .. This can be used with or without an operand.
+                        Using PAD without the operand will force the
+                        code to be padded with nulls up to the next
+                        32K boundary.  If an operand is used it must
+                        fall between $8000 and $ffff and the current
+                        address must be less than the operand.
+                        Otherwise the PAD will be ignored.
+
+                Example #1
+                                org     $8000
+                        Start                   ; Start=32768
+                                pad
+                        NextStart               ; NextStart=90304
+
+                Example #2
+                                org     $8000
+                        Start                   ; Start=32768
+                                pad     $8800
+                        NextStart               ; NextStart=38416
+
+
+>       SRC <file> .... Append a source file to the current address.
+>               or      If you save routines in files by themself you
+>       INCSRC <file> . can use this command to have the source
+>                       included into the file without it physically
+>                       being in the main source code.  You can stack
+>                       a maximum of 8 source files.  At the end of
+>                       each file you will be informed of how many
+>                       lines were in the source file.
+>
+>               Example
+>                               src     snesinit.asm
+
+
+        VER <xx> ...... Defines the version number stored in the
+                or      header.  The actual value in the header is
+        VERSION <xx> .. one less than the specified operand.
+
+                Example
+                                ver     1
+                        or
+                                version $01
+
+
+>       Fixed Bugs
+>       ==========
+>
+>       Problems with the extra spaces at the end of a line caused
+>       version of TricksASM prior to this one to crash.  This bug
+>       has been fixed and your system should not hang forcing you to
+>       reset.
+>
+>       More "blank space" related freezing has been debugged.  Found
+>       this problem after assembling Tic-Tac-Toe from Amos.
+>
+>       Please report any bugs to the email address listed at the
+>       end of this document.
+
+
+        Updates
+        =======
+
+        New versions of Tricks Assembler can be found on the Infinite
+        Dreams BBS at +1-604-733-6432.  We also have a file area for
+        SNES programming files, demos, and utilities.  I'll try to
+        send new versions to the famidev site on busop.cit.wayne.edu.
+
+
+        Closing Words
+        =============
+
+        TRASM was made mainly for my use but I've tried to stretch
+        the abilities so that other people would be comfortable with
+        using it as well.  If you find some problems let me know as
+        I'd like to make it as bug-free as possible.
+
+>       TricksASM should not freeze on you very often anymore as I've
+>       found that the main problem was with extra spaces in lines or
+>       blank lines with spaces.  It was stuck in an infinite loop.
+>       The bug has been squashed and your source codes should be
+>       have a smoother time getting assembled.
+
+        You can contact me through the Internet by leaving mail to:
+
+                norman_yen@idream.tfbbs.wimsey.com
+                                or
+                norman_yen@mindlink.bc.ca
+
+        Or you can catch me on the IRC as 'minus'.
+
+                                                Norman Yen
+                                                AKA 1000 Miles [Tricks]
+
