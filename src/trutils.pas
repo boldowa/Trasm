@@ -517,7 +517,7 @@ var	p,pbegin,pend: integer;
 	i: integer;
 begin
 	i:=0;
-	while (e[i+1]='-') and (i<=length(e)) do inc (i);
+	while (i<=length(e)) and (e[i+1]='-') do inc (i);
 	if (e='-') or (i>1) then
 	begin
 		if (i>16) then i:=16;
@@ -527,7 +527,7 @@ begin
 		exit;
 	end;
 	i:=0;
-	while (e[i+1]='+') and (i<=length(e)) do inc (i);
+	while (i<=length(e)) and (e[i+1]='+') do inc (i);
 	if (e='+') or (i>1) then
 	begin
 		if (i>16) then i:=16;

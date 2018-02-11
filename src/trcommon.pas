@@ -1630,18 +1630,18 @@ begin
   assemble_line:=0;
 
   { Check for definitions of temporary symbols }
-  if (f1[1]='-') then
+  if (0<>length(f1)) and (f1[1]='-') then
   begin
     i:=0;
-    while (f1[i+1]='-') and (i<=length(f1)) do inc (i);
+    while (i<length(f1)) and (f1[i+1]='-') do inc (i);
     if (i>16) then i:=16;
     temps_minus[i].number:=address;
     goto skip_label_check;
   end;
-  if (f1[1]='+') then
+  if (0<>length(f1)) and (f1[1]='+') then
   begin
     i:=0;
-    while (f1[i+1]='+') and (i<=length(f1)) do inc (i);
+    while (i<length(f1)) and (f1[i+1]='+') do inc (i);
     if (i>16) then i:=16;
     temps_plus[i].number:=address;
     goto skip_label_check;
