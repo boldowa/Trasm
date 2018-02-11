@@ -1,0 +1,18 @@
+[default]
+fpcdir=/usr/lib/fpc/3.0.2/units/i386-win32/
+
+[package]
+name=trasm
+version=1.11
+
+[compiler]
+options=-Mtp -O2 -Xs -Xd -Twin32
+sourcedir=./src
+
+[target]
+programs=trasm trasm_b
+units=trcommon trutils trerror
+
+#[requires]
+#nortl=y
+#libc=y

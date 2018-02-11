@@ -2,27 +2,46 @@
 # Trasm make file
 #################################################
 
-#PAS		 = fpc
-PAS		 = ppcross386
-PASFLAGS	 = -Mtp -O2 -Xd -Xs
-#PASFLAGS	 = -Mtp -g
-PASFLAGS	+= -Twin32 -XPi386-win32
-
 TGTNAME		 = trasm
-BIN_SUFFIX	 = .exe
+SRCDIR		 = src/
 
-TGT1		 = src/$(TGTNAME)$(BIN_SUFFIX)
-TGT2		 = src/$(TGTNAME)_b$(BIN_SUFFIX)
+
+MV		 = mv
+PP		 = fpc
+PPFLAGS		 = -Mtp -O2 -Xd -Xs -CX
+## debug
+ifdef DEBUG
+PPFLAGS		 = -Mtp -g
+endif
+
+BIN_SUFFIX	 =
+ifdef WIN32
+PP		 = ppcross386
+PPFLAGS		+= -Twin32 -XPi386-win32
+BIN_SUFFIX	 = .exe
+endif
+
+
+TGT1		 = $(TGTNAME)$(BIN_SUFFIX)
+TGT2		 = $(TGTNAME)_b$(BIN_SUFFIX)
+
+DEPENDS		 = $(SRCDIR)trcommon.pas
+DEPENDS		+= $(SRCDIR)trerror.pas
+DEPENDS		+= $(SRCDIR)trutils.pas
 
 .PHONY: all clean
+
 all: $(TGT1) $(TGT2)
 
-$(TGT1): src/trasm.pas
-	$(PAS) $(PASFLAGS) $^
+$(TGT1): $(SRCDIR)$(TGTNAME).pas $(DEPENDS)
+	$(PP) -o$@ $(PPFLAGS) $< && \
+	$(MV) $(SRCDIR)$@ .
 
-$(TGT2): src/trasm_b.pas
-	$(PAS) $(PASFLAGS) $^
+$(TGT2): $(SRCDIR)$(TGTNAME)_b.pas $(DEPENDS)
+	$(PP) -o$@ $(PPFLAGS) $< &&\
+	$(MV) $(SRCDIR)$@ .
 
 clean:
-	$(RM) src/trasm.o src/trasm.exe src/trasm \
-	      src/trasm_b.o src/trasm_b.exe src/trasm_b
+	$(RM) $(SRCDIR)*.o $(SRCDIR)*.ppu $(SRCDIR)ppas.* \
+	      $(TGT1) $(TGT2)
+

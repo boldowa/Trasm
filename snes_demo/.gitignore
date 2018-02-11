@@ -1,0 +1,7 @@
+# trasm outputs
+*.smc
+*.sym
+*.err
+
+# main
+/ZOOM.bin

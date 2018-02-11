@@ -1,0 +1,8 @@
+# objects
+*.o
+*.ppu
+
+# executable
+/*.exe
+/trasm
+/trasm_b
